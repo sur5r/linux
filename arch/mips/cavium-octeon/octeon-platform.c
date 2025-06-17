@@ -1132,6 +1132,41 @@ end_led:
 	}
 #endif
 
+
+	return 0;
+}
+
+int __init ubnt_prune_device_tree(void)
+{
+	/* MMC on UBNT */
+	pr_info("UBNT board DTS pruning...\n");
+	if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E300) {
+		// Remove unused MMC slot definition
+		int mmc_slot2 = fdt_path_offset(initial_boot_params, "/soc/mmc/mmc-slot@2");
+		pr_info("UBNT E300 found, looking for mmc-slot@2\n");
+
+		if (mmc_slot2 > 0) {
+			pr_info("UBNT E300 found, deleting mmc-slot@2\n");
+			fdt_nop_node(initial_boot_params, mmc_slot2);
+		} else {
+			pr_info("mmc-slot@2 not found\n");
+		}
+	} else if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E200 ||
+		   octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E220) {
+		int mmc_slot0 = fdt_path_offset(initial_boot_params, "/soc/mmc/mmc-slot@0");
+		pr_info("UBNT E200/E220 found, looking for mmc-slot@0\n");
+
+		u32 freq = 26000000;
+
+		if (mmc_slot0 > 0) {
+			pr_info("UBNT E200/E220 mmc-slot@0 found, setting frequency to 26MHz");
+			fdt_setprop_inplace_cell(initial_boot_params, mmc_slot0,
+						 "spi-max-frequency", freq);
+		} else {
+			pr_info("mmc-slot@0 not found\n");
+		}
+	}
+
 	return 0;
 }
 
